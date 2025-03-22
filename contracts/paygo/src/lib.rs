@@ -1,6 +1,6 @@
 #![no_std]
 
 pub mod errors;
-pub mod types;
-pub mod paygo;
-mod test;
+pub mod events;
+pub mod models;
+pub mod storage;
