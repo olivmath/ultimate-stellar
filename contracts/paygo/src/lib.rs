@@ -1,11 +1,6 @@
 #![no_std]
-use soroban_sdk::contract;
 
-mod errors;
-mod types;
-
-#[contract]
-
-pub struct PayGoContract;
-
+pub mod errors;
+pub mod types;
+pub mod paygo;
 mod test;
