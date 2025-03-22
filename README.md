@@ -83,14 +83,18 @@ cargo test
 
 ## Deploying the Contract
 
-# VERSION 1
+# VERSION 1 (Manual)
 
 ```bash
+participant Admin
 participant USDC
 participant Owner
 participant Paygo
+participant Backend
 participant Company
 
+// UPLOAD COMPANY
+Admin->Company: upload Company contract to Stellar Blockchain
 
 // FUND COMPANY
 Owner->USDC: approve(paygo, 100)
@@ -125,14 +129,18 @@ Company->Employee4: pay 1 USDC
 Company->Employee5: pay 1 USDC
 ```
 
-# VERSION 2
+# VERSION 2 (Auto)
 
 ```bash
-participant Backend
+participant Admin
 participant USDC
 participant Owner
 participant Paygo
+participant Backend
 participant Company
+
+// UPLOAD COMPANY
+Admin->Company: upload Company contract to Stellar Blockchain
 
 
 // FUND COMPANY
