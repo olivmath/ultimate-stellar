@@ -83,81 +83,111 @@ cargo test
 
 ## Deploying the Contract
 
-1. Start a local Stellar network:
+# VERSION 1
 
 ```bash
-soroban-cli local
+participant USDC
+participant Owner
+participant Paygo
+participant Company
+
+
+// FUND COMPANY
+Owner->USDC: approve(paygo, 100)
+
+// VALIDATE
+Owner->Paygo: create_company(name, description, list of employees)
+Paygo->Paygo: validate company must not empty employee list
+Paygo->Paygo: validate company must not not has any employee with invalid account id
+Paygo->Paygo: validate company must not has duplicated employee in list
+Paygo->Paygo: validate owner pay with `USDC` token
+Paygo->Paygo: calculate employee total cost
+Paygo->USDC: validate owner approve balance enough to cover total cost
+USDC-->Paygo: owner allowance 100
+
+
+// WRITE
+Paygo->Company: Instantiate company with owner data
+Company-->Paygo: return account id
+Paygo->USDC: Transfer 100 USDC to Company
+USDC-->Company: pay 100 USDC
+
+// RETURN
+Paygo-->Owner: account id of company
+
+
+// PAYMENT
+Owner->Company: call pay function
+Company->Employee1: pay 1 USDC
+Company->Employee2: pay 1 USDC
+Company->Employee3: pay 1 USDC
+Company->Employee4: pay 1 USDC
+Company->Employee5: pay 1 USDC
 ```
 
-2. Deploy the contract:
+# VERSION 2
 
 ```bash
-soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/people.wasm \
-  --source YOUR_SECRET_KEY
+participant Backend
+participant USDC
+participant Owner
+participant Paygo
+participant Company
+
+
+// FUND COMPANY
+Owner->USDC: approve(paygo, 100)
+
+// VALIDATE
+Owner->Paygo: create_company(name, description, list of employees)
+Paygo->Paygo: validate company must not empty employee list
+Paygo->Paygo: validate company must not not has any employee with invalid account id
+Paygo->Paygo: validate company must not has duplicated employee in list
+Paygo->Paygo: validate owner pay with `USDC` token
+Paygo->Paygo: calculate employee total cost
+Paygo->USDC: validate owner approve balance enough to cover total cost
+USDC-->Paygo: owner allowance 100
+
+
+// WRITE
+Paygo->Company: Instantiate company with owner data
+Company-->Paygo: return account id
+Paygo->USDC: Transfer 100 USDC to Company
+USDC-->Company: pay 100 USDC
+
+// RETURN
+Paygo-->Backend: [emit event] new company: account id
+
+
+// PAYMENT
+Backend->Company: call pay function
+Company->Employee1: pay 1 USDC
+Company->Employee2: pay 1 USDC
+Company->Employee3: pay 1 USDC
+Company->Employee4: pay 1 USDC
+Company->Employee5: pay 1 USDC
+
+// NEW BLOCK
+Paygo-->Backend: "new block"
+
+
+// PAYMENT
+Backend->Company: call pay function
+Company->Employee1: pay 1 USDC
+Company->Employee2: pay 1 USDC
+Company->Employee3: pay 1 USDC
+Company->Employee4: pay 1 USDC
+Company->Employee5: pay 1 USDC
+
+// NEW BLOCK
+Paygo-->Backend: "new block"
+
+
+// PAYMENT
+Backend->Company: call pay function
+Company->Employee1: pay 1 USDC
+Company->Employee2: pay 1 USDC
+Company->Employee3: pay 1 USDC
+Company->Employee4: pay 1 USDC
+Company->Employee5: pay 1 USDC
 ```
-
-## Contract Functions
-
-The People contract provides the following functions:
-
-- `create_person(name: String, age: i32) -> Address`: Creates a new person record
-- `get_person(address: Address) -> Person`: Retrieves a person's information
-- `update_person(address: Address, name: String, age: i32)`: Updates a person's information
-- `delete_person(address: Address)`: Removes a person record
-
-## Interacting with the Contract
-
-1. Create a new person:
-
-```bash
-soroban contract invoke \
-  --id CONTRACT_ID \
-  --source YOUR_SECRET_KEY \
-  -- create_person "John Doe" 30
-```
-
-2. Get person details:
-
-```bash
-soroban contract invoke \
-  --id CONTRACT_ID \
-  --source YOUR_SECRET_KEY \
-  -- get_person PERSON_ADDRESS
-```
-
-3. Update person:
-
-```bash
-soroban contract invoke \
-  --id CONTRACT_ID \
-  --source YOUR_SECRET_KEY \
-  -- update_person PERSON_ADDRESS "John Smith" 31
-```
-
-4. Delete person:
-
-```bash
-soroban contract invoke \
-  --id CONTRACT_ID \
-  --source YOUR_SECRET_KEY \
-  -- delete_person PERSON_ADDRESS
-```
-
-## Development
-
-To modify the contract:
-
-1. Navigate to the contract directory:
-
-```bash
-cd contracts/people
-```
-
-2. Edit the source code in `src/lib.rs`
-
-3. Rebuild and redeploy the contract following the steps above
-
-## License
-
-This project is licensed under the MIT License.
