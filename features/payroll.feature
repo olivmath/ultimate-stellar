@@ -11,8 +11,8 @@ Feature: Stellar Payroll System
 
     Scenario: Deploy contracts and process payroll
         Given admin uploads the company contract to Stellar
-        And admin uploads and instantiates the USDC contract
-        And admin uploads and instantiates the PayGo contract
+        And admin upload and deploy the USDC contract
+        And admin upload and deploy the PayGo contract
         When owner approves 100K USDC to PayGo contract
         And owner creates a company with the employee list
         And owner retrieves the company contract account ID

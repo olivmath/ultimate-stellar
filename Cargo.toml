@@ -6,9 +6,6 @@ members = ["contracts/*"]
 soroban-sdk = { version = "22.0.7" }
 soroban-token-sdk = { version = "22.0.7" }
 
-[workspace.dev-dependencies]
-soroban-sdk = { version = "22.0.7", features = ["testutils"] }
-
 
 [profile.release]
 opt-level = "z"
