@@ -1,6 +1,8 @@
-# CREATE EMPLOYEES WALLETS
+# CREATE 100 EMPLOYEES WALLETS
 
 # UPLOAD COMPANY: upload Company contract to Stellar Blockchain
+
+# DEPLOY USDC 
 
 # FUND COMPANY: Owner->USDC: approve(paygo, 100)
 
