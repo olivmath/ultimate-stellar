@@ -63,7 +63,7 @@ impl PayGo {
             .get::<Symbol, Address>(&USDC)
             .unwrap();
 
-        let token_client = TokenClient::new(&e, &token);
+        let token_client = TokenClient::new(&e, token);
 
         if token_client.allowance(&owner, &e.current_contract_address()) < total_cost {
             return Err(Error::InsufficientAllowance);
@@ -77,7 +77,14 @@ impl PayGo {
             .unwrap();
 
         // mount company with data
-        let constructor_args: Vec<Val> = (company_name, company_description, company_employees, &owner, token).into_val(&e);
+        let constructor_args: Vec<Val> = (
+            company_name,
+            company_description,
+            company_employees,
+            &owner,
+            token,
+        )
+            .into_val(&e);
         let salt = BytesN::from_array(&e, &[0; 32]);
 
         // instantiate company in blockchain

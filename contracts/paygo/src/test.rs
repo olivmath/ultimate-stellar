@@ -1,6 +1,5 @@
 #![cfg(test)]
 
-
 // Validate company has employees
 // Validate if all employee account id are valid
 // Validate no duplicate employees
