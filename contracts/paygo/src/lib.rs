@@ -14,7 +14,7 @@ pub struct PayGo;
 
 #[contractimpl]
 impl PayGo {
-    pub fn initialize(e: Env, usdc: Address, wasm_hash: BytesN<32>) -> Result<(), Error> {
+    pub fn __constructor(e: Env, usdc: Address, wasm_hash: BytesN<32>) -> Result<(), Error> {
         e.storage().instance().set(&USDC, &usdc);
         e.storage().instance().set(&WASM, &wasm_hash);
         e.storage().instance().set(&PAY_BLOCK, &432_000);
