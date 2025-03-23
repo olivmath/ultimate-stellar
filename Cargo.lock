@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "company"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "soroban-sdk",
 ]
@@ -827,7 +827,7 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "paygo"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "soroban-sdk",
 ]
@@ -1413,6 +1413,13 @@ name = "unicode-ident"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5f39404a5da50712a4c1eecf25e90dd62b613502b7e925fd4e4d19b5c96512"
+
+[[package]]
+name = "usdc"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
 
 [[package]]
 name = "version_check"
