@@ -3,6 +3,8 @@ from stellar_sdk import Server, Keypair, TransactionBuilder, Network, Asset
 from typing import List, Dict
 import random
 import requests
+import subprocess
+import time
 
 # Helper functions
 def generate_random_account_id() -> str:
@@ -23,14 +25,39 @@ def create_employee_list(count: int, total_budget: float) -> List[Dict]:
         })
     return employees
 
+def deploy_contract(context, wasm_path: str, admin_keypair: Keypair) -> str:
+    """Deploy a contract using soroban-cli"""
+    try:
+        # Build the contract
+        subprocess.run(["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"],
+                      cwd=wasm_path.split("/target/")[0],
+                      check=True)
+        
+        # Deploy using soroban-cli
+        result = subprocess.run(
+            ["soroban", "contract", "deploy",
+             "--wasm", wasm_path,
+             "--source", admin_keypair.secret,
+             "--rpc-url", context.stellar_url,
+             "--network-passphrase", context.network_passphrase],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"Failed to deploy contract: {e.stderr}")
+
 @given('the Stellar network is running')
 def step_check_stellar_network(context):
     """Verify Stellar network is accessible"""
     try:
-        context.server = Server("http://localhost:8000")
+        context.server = Server(context.stellar_url)
         context.network = Network.TESTNET_NETWORK_PASSPHRASE
         # Test connection
-        context.server.load_account(Keypair.random().public_key)
+        response = requests.get(f"{context.stellar_url}/soroban/rpc")
+        assert response.status_code == 200, "Soroban RPC not accessible"
     except Exception as e:
         raise AssertionError(f"Stellar network not accessible: {str(e)}")
 
@@ -40,7 +67,7 @@ def step_setup_admin_wallet(context):
     context.admin_keypair = Keypair.random()
     # Fund the admin account using friendbot (testnet) or local network
     try:
-        requests.get(f"http://localhost:8000/friendbot?addr={context.admin_keypair.public_key}")
+        requests.get(f"{context.stellar_url}/friendbot?addr={context.admin_keypair.public_key}")
     except Exception as e:
         raise AssertionError(f"Could not fund admin wallet: {str(e)}")
 
@@ -50,7 +77,7 @@ def step_setup_owner_wallet(context):
     context.owner_keypair = Keypair.random()
     # Fund the owner account
     try:
-        requests.get(f"http://localhost:8000/friendbot?addr={context.owner_keypair.public_key}")
+        requests.get(f"{context.stellar_url}/friendbot?addr={context.owner_keypair.public_key}")
     except Exception as e:
         raise AssertionError(f"Could not fund owner wallet: {str(e)}")
 
@@ -65,65 +92,120 @@ def step_create_employee_list(context):
 @given('admin uploads the company contract to Stellar')
 def step_upload_company_contract(context):
     """Upload company contract to Stellar"""
-    # Implementation depends on your contract deployment method
-    # This is a placeholder for the actual contract deployment
-    context.company_contract_hash = "company_contract_hash"
-    assert context.company_contract_hash, "Failed to upload company contract"
+    try:
+        # Deploy the contract
+        wasm_path = "contracts/company/target/wasm32-unknown-unknown/release/company.wasm"
+        context.company_contract_hash = deploy_contract(context, wasm_path, context.admin_keypair)
+        assert context.company_contract_hash, "Failed to upload company contract"
+    except Exception as e:
+        raise AssertionError(f"Failed to deploy company contract: {str(e)}")
 
 @given('admin uploads and instantiates the USDC contract')
 def step_setup_usdc_contract(context):
     """Upload and instantiate USDC contract"""
-    # Implementation depends on your contract deployment method
-    context.usdc_contract_id = "usdc_contract_id"
-    assert context.usdc_contract_id, "Failed to setup USDC contract"
+    try:
+        # Deploy USDC contract
+        wasm_path = "contracts/usdc/target/wasm32-unknown-unknown/release/usdc.wasm"
+        context.usdc_contract_id = deploy_contract(context, wasm_path, context.admin_keypair)
+        assert context.usdc_contract_id, "Failed to setup USDC contract"
+    except Exception as e:
+        raise AssertionError(f"Failed to deploy USDC contract: {str(e)}")
 
 @given('admin uploads and instantiates the PayGo contract')
 def step_setup_paygo_contract(context):
     """Upload and instantiate PayGo contract"""
-    # Implementation depends on your contract deployment method
-    context.paygo_contract_id = "paygo_contract_id"
-    assert context.paygo_contract_id, "Failed to setup PayGo contract"
+    try:
+        # Deploy PayGo contract
+        wasm_path = "contracts/paygo/target/wasm32-unknown-unknown/release/paygo.wasm"
+        context.paygo_contract_id = deploy_contract(context, wasm_path, context.admin_keypair)
+        assert context.paygo_contract_id, "Failed to setup PayGo contract"
+    except Exception as e:
+        raise AssertionError(f"Failed to deploy PayGo contract: {str(e)}")
 
 @when('owner approves 100K USDC to PayGo contract')
 def step_approve_usdc(context):
     """Approve USDC spending to PayGo contract"""
-    # Implementation depends on your contract interaction method
-    success = True  # Replace with actual approval call
-    assert success, "Failed to approve USDC"
+    try:
+        # Use soroban-cli to approve USDC
+        subprocess.run(
+            ["soroban", "contract", "invoke",
+             "--id", context.usdc_contract_id,
+             "--source", context.owner_keypair.secret,
+             "--rpc-url", context.stellar_url,
+             "--network-passphrase", context.network_passphrase,
+             "--", "approve",
+             "--spender", context.paygo_contract_id,
+             "--amount", str(100000 * 10**7)],  # Assuming 7 decimal places
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"Failed to approve USDC: {e.stderr}")
 
 @when('owner creates a company with the employee list')
 def step_create_company(context):
     """Create company with employee list"""
-    # Implementation depends on your contract interaction method
-    context.company_name = "Test Company"
-    context.company_description = "Test Description"
-    # Call create_company with the employee list
-    success = True  # Replace with actual contract call
-    assert success, "Failed to create company"
-
-@when('owner retrieves the company contract account ID')
-def step_get_company_account_id(context):
-    """Get company contract account ID"""
-    # Implementation depends on your contract interaction method
-    context.company_account_id = "company_account_id"
-    assert context.company_account_id, "Failed to get company account ID"
+    try:
+        # Prepare employee data for CLI
+        employees_data = []
+        for emp in context.employees:
+            employees_data.extend([
+                "--employee-name", emp['name'],
+                "--employee-account", emp['account_id'],
+                "--employee-budget", str(int(emp['budget'] * 10**7))
+            ])
+        
+        # Use soroban-cli to create company
+        result = subprocess.run(
+            ["soroban", "contract", "invoke",
+             "--id", context.paygo_contract_id,
+             "--source", context.owner_keypair.secret,
+             "--rpc-url", context.stellar_url,
+             "--network-passphrase", context.network_passphrase,
+             "--", "create_company",
+             "--name", "Test Company",
+             "--description", "Test Description"] + employees_data,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        context.company_account_id = result.stdout.strip()
+        assert context.company_account_id, "Failed to get company account ID"
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"Failed to create company: {e.stderr}")
 
 @when('owner calls pay_employees on the company contract')
 def step_pay_employees(context):
     """Execute pay_employees function"""
-    # Implementation depends on your contract interaction method
-    success = True  # Replace with actual contract call
-    assert success, "Failed to execute payment"
+    try:
+        # Use soroban-cli to execute payment
+        subprocess.run(
+            ["soroban", "contract", "invoke",
+             "--id", context.company_account_id,
+             "--source", context.owner_keypair.secret,
+             "--rpc-url", context.stellar_url,
+             "--network-passphrase", context.network_passphrase,
+             "--", "pay_employees"],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        raise AssertionError(f"Failed to execute payment: {e.stderr}")
 
 @then('all 100 employee wallets should receive their correct payment')
 def step_verify_payments(context):
     """Verify all employees received correct payment"""
     for employee in context.employees:
-        # Get balance of employee account
         try:
             account = context.server.load_account(employee['account_id'])
-            balance = float(account.balances[0].balance)  # Assuming USDC is first balance
+            # Find USDC balance
+            usdc_balance = 0
+            for balance in account.balances:
+                if balance.asset_type == "credit_alphanum4" and balance.asset_code == "USDC":
+                    usdc_balance = float(balance.balance)
+                    break
+            
             expected_balance = employee['budget']
-            assert abs(balance - expected_balance) < 0.01, f"Incorrect payment for employee {employee['name']}"
+            assert abs(usdc_balance - expected_balance) < 0.01, \
+                f"Incorrect payment for employee {employee['name']}: expected {expected_balance}, got {usdc_balance}"
         except Exception as e:
             raise AssertionError(f"Failed to verify payment for {employee['name']}: {str(e)}") 
